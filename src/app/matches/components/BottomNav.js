@@ -7,7 +7,6 @@ export default function BottomNav() {
     const pathname = usePathname();
 
     const navItems = [
-        
         { label: "Matches", icon: "/matches_icon.svg", path: "/matches" },
         { label: "Likes", icon: "/likes_icon.svg", path: "/likes" },
         { label: "Messages", icon: "/messages_icon.svg", path: "/chat" },
@@ -22,7 +21,13 @@ export default function BottomNav() {
                     <button
                         key={item.label}
                         onClick={() => {
-                            router.push(item.path)}}
+                            if (item.label === "Messages") {
+                                // Redirect to external URL
+                                window.location.href = "https://chatapp-frontend-xi-ecru.vercel.app/chat";
+                            } else {
+                                router.push(item.path);
+                            }
+                        }}
                         className={`flex flex-col items-center ${isActive ? "text-white" : "text-gray-400"}`}
                     >
                         <Image
