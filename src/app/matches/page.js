@@ -72,6 +72,12 @@ export default function MatchesPage() {
   const swiped = (direction, name) => {
     setLastDirection(direction);
     console.log(`You swiped ${direction} on ${name}`);
+    // Trigger hearts or cross for swipe gestures
+    if (direction === "right") {
+      setShowHearts(true);
+    } else if (direction === "left") {
+      setShowRejectX(true);
+    }
     setTimeout(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % profiles.length);
       setShowHearts(false);
@@ -84,7 +90,7 @@ export default function MatchesPage() {
     if (isAnimating || !cardRef.current) return;
     setIsAnimating(true);
 
-    // Trigger hearts or cross immediately
+    // Trigger hearts or cross for button presses
     if (direction === "right") {
       setShowHearts(true);
     } else {
@@ -92,7 +98,8 @@ export default function MatchesPage() {
     }
 
     const card = cardRef.current;
-    card.style.transition = "transform 0.5s ease-out";
+    card.style.transition = "transform 0.7s ease-out, opacity 0.7s ease-out";
+    card.style.opacity = "1";
     
     if (direction === "right") {
       card.style.transform = "translateX(100vw) rotate(15deg)";
@@ -101,6 +108,8 @@ export default function MatchesPage() {
     }
 
     setTimeout(() => {
+      // Hide the card to prevent reappearance
+      card.style.opacity = "0";
       card.style.transition = "none";
       card.style.transform = "translateX(0) rotate(0deg)";
       swiped(direction, profiles[currentIndex].name);
@@ -228,16 +237,16 @@ export default function MatchesPage() {
           }
         }
         .animate-heart1 {
-          animation: heart1 0.8s ease-out forwards;
+          animation: heart1 0.7s ease-out forwards;
         }
         .animate-heart2 {
-          animation: heart2 0.8s ease-out forwards;
+          animation: heart2 0.7s ease-out forwards;
         }
         .animate-heart3 {
-          animation: heart3 0.8s ease-out forwards;
+          animation: heart3 0.7s ease-out forwards;
         }
         .animate-reject-x {
-          animation: reject-x 0.5s ease-out forwards;
+          animation: reject-x 0.7s ease-out forwards;
         }
       `}</style>
     </div>
