@@ -10,7 +10,7 @@ export default function BottomNav() {
         { label: "Matches", icon: "/matches_icon.svg", path: "/matches" },
         { label: "Likes", icon: "/likes_icon.svg", path: "/likes" },
         { label: "Messages", icon: "/messages_icon.svg", path: "/chat" },
-        { label: "Profile", icon: "/profile_icon.svg", path: "/profile" },
+        { label: "Profile", icon: "/profile_icon.svg", path: "/settings" },
     ];
 
     return (
