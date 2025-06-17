@@ -1,29 +1,52 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import TinderCard from "react-tinder-card";
 import TopBar from "./components/TopBar";
 import BottomNav from "./components/BottomNav";
-
-const profiles = [
-  { name: "Arlene", age: 25, distance: "3 miles", image: "/profile1.png" },
-  { name: "Kristin", age: 30, distance: "10 miles", image: "/profile2.png" },
-  { name: "Alex", age: 29, distance: "4 miles", image: "/profile3.png" },
-  { name: "Jenny", age: 24, distance: "6 miles", image: "/profile4.png" },
-  { name: "Michael", age: 28, distance: "2 miles", image: "/profile5.png" },
-  { name: "Sophia", age: 26, distance: "7 miles", image: "/profile6.png" },
-  { name: "Daniel", age: 31, distance: "8 miles", image: "/profile7.png" },
-  { name: "Emma", age: 23, distance: "1 mile", image: "/profile8.png" },
-  { name: "John Doe", age: 24, distance: "5 miles", image: "/profile9.png" },
-];
+import { doc, getDoc } from "firebase/firestore"; // Import doc and getDoc
+import { db } from "../../lib/firebase"; // Adjust path if necessary based on your file structure
 
 export default function MatchesPage() {
+  const [profiles, setProfiles] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showHearts, setShowHearts] = useState(false);
   const [showRejectX, setShowRejectX] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isRejected, setIsRejected] = useState(false);
   const cardRef = useRef(null);
-  
+  const [isLoading, setIsLoading] = useState(true); // New loading state
+  const [error, setError] = useState(null); // New error state
+
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      try {
+        // Reference to the 'matches' document within the 'screens' collection
+        const matchesDocRef = doc(db, "screens", "matches");
+        const matchesDocSnap = await getDoc(matchesDocRef);
+
+        if (matchesDocSnap.exists()) {
+          const data = matchesDocSnap.data();
+          if (data && Array.isArray(data.profiles)) {
+            // Check if 'profiles' field exists and is an array
+            setProfiles(data.profiles);
+          } else {
+            console.warn("The 'matches' document does not contain a 'profiles' array.");
+            setProfiles([]); // Set to empty if not found or not an array
+          }
+        } else {
+          console.log("No such 'matches' document!");
+          setProfiles([]); // Set to empty if document doesn't exist
+        }
+      } catch (err) {
+        console.error("Error fetching profiles: ", err);
+        setError("Failed to load profiles. Please try again later.");
+      } finally {
+        setIsLoading(false); // Always set loading to false after attempt
+      }
+    };
+
+    fetchProfiles();
+  }, []); // Empty dependency array means this runs once on mount
 
   const swiped = (direction, name) => {
     console.log(`You swiped ${direction} on ${name}`);
@@ -35,6 +58,7 @@ export default function MatchesPage() {
     }
 
     setTimeout(() => {
+      // Move to the next profile or loop back to the beginning
       setCurrentIndex((prevIndex) => (prevIndex + 1) % profiles.length);
       setShowHearts(false);
       setShowRejectX(false);
@@ -44,7 +68,9 @@ export default function MatchesPage() {
   };
 
   const triggerSwipeAnimation = (direction) => {
-    if (isAnimating || !cardRef.current) return;
+    // Prevent swiping if no profiles, still loading, or animating
+    if (isAnimating || !cardRef.current || profiles.length === 0 || isLoading) return;
+
     setIsAnimating(true);
 
     if (direction === "right") {
@@ -74,6 +100,32 @@ export default function MatchesPage() {
   const handleReject = () => triggerSwipeAnimation("left");
   const handleAccept = () => triggerSwipeAnimation("right");
 
+  if (isLoading) {
+    return (
+      <div className="bg-[#111111] text-white h-screen flex flex-col items-center justify-center">
+        <p>Loading profiles...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-[#111111] text-white h-screen flex flex-col items-center justify-center">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
+
+  if (profiles.length === 0) {
+    return (
+      <div className="bg-[#111111] text-white h-screen flex flex-col items-center justify-center">
+        <p>No profiles found.</p>
+      </div>
+    );
+  }
+
+  const currentProfile = profiles[currentIndex];
+
   return (
     <div className="bg-[#111111] text-white h-screen flex flex-col relative">
       <TopBar />
@@ -92,15 +144,20 @@ export default function MatchesPage() {
             </div>
           )}
 
+          {/* Key for TinderCard: When dealing with arrays where items don't have a unique ID from the data itself,
+              you might use a combination of properties or an index, but be careful with index if items are reordered.
+              In your case, since the array elements are objects with 'name', 'age', etc.,
+              we can generate a simple unique key. If Firebase provided an ID for each array element, that would be ideal,
+              but it doesn't for array elements directly. For now, let's use a combination. */}
           <TinderCard
-            key={currentIndex}
-            onSwipe={(dir) => swiped(dir, profiles[currentIndex].name)}
+            key={`${currentProfile.name}-${currentIndex}`} // Better unique key for array elements
+            onSwipe={(dir) => swiped(dir, currentProfile.name)}
             preventSwipe={["up", "down"]}
           >
             <div
               ref={cardRef}
               style={{
-                backgroundImage: `url(${profiles[currentIndex].image})`,
+                backgroundImage: `url(${currentProfile.image})`,
                 filter: isRejected ? "grayscale(100%)" : "none",
               }}
               className="w-[90vw] max-w-sm h-[65vh] bg-cover bg-center rounded-3xl border-2 border-red-500 shadow-lg relative transition-all duration-300"
@@ -108,9 +165,9 @@ export default function MatchesPage() {
               <div className="absolute bottom-0 w-full h-100 bg-gradient-to-t from-black via-transparent to-transparent rounded-b-3xl">
                 <div className="absolute bottom-0 w-full p-4">
                   <h2 className="text-2xl font-semibold">
-                    {profiles[currentIndex].name}, {profiles[currentIndex].age}
+                    {currentProfile.name}, {currentProfile.age}
                   </h2>
-                  <p className="text-sm text-gray-300">{profiles[currentIndex].distance}</p>
+                  <p className="text-sm text-gray-300">{currentProfile.distance}</p>
                 </div>
               </div>
             </div>
@@ -122,14 +179,14 @@ export default function MatchesPage() {
         <button
           onClick={handleReject}
           className="w-16 h-16 rounded-full flex bg-red-500 items-center justify-center text-white text-2xl"
-          disabled={isAnimating}
+          disabled={isAnimating || profiles.length === 0} // Disable buttons if no profiles
         >
           <img src="/reject.svg" alt="Reject" className="w-8 h-8" />
         </button>
         <button
           onClick={handleAccept}
           className="w-16 h-16 rounded-full flex bg-red-500 items-center justify-center text-white text-2xl"
-          disabled={isAnimating}
+          disabled={isAnimating || profiles.length === 0} // Disable buttons if no profiles
         >
           <img src="/accept.svg" alt="Accept" className="w-8 h-8" />
         </button>

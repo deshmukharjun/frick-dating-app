@@ -1,27 +1,83 @@
 "use client";
-import React from "react";
-import TopBar from "../matches/components/TopBar";
-import BottomNav from "../matches/components/BottomNav";
-
-const todayProfiles = [
-  { name: "Arlene", age: 25, image: "/profile1.png" },
-  { name: "Kristin", age: 30, image: "/profile2.png" },
-  { name: "Alex", age: 29, image: "/profile3.png" },
-];
-
-const yesterdayProfiles = [
-  { name: "Michael", age: 28, image: "/profile5.png" },
-  { name: "Sophia", age: 26, image: "/profile6.png" },
-  { name: "Jenny", age: 24, image: "/profile4.png" },
-];
-
-const twoDaysAgoProfiles = [
-  { name: "Daniel", age: 31, image: "/profile7.png" },
-  { name: "Emma", age: 23, image: "/profile8.png" },
-  { name: "John", age: 24, image: "/profile9.png" },
-];
+import React, { useState, useEffect } from "react";
+import TopBar from "../matches/components/TopBar"; // Assuming TopBar is in a common location
+import BottomNav from "../matches/components/BottomNav"; // Assuming BottomNav is in a common location
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../lib/firebase"; // Adjust path if necessary
 
 export default function LikesPage() {
+  const [todayProfiles, setTodayProfiles] = useState([]);
+  const [yesterdayProfiles, setYesterdayProfiles] = useState([]);
+  const [twoDaysAgoProfiles, setTwoDaysAgoProfiles] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchLikedProfiles = async () => {
+      try {
+        const likesDocRef = doc(db, "screens", "likes");
+        const likesDocSnap = await getDoc(likesDocRef);
+
+        if (likesDocSnap.exists()) {
+          const data = likesDocSnap.data();
+          if (data && Array.isArray(data.profiles)) {
+            const allLikedProfiles = data.profiles;
+
+            const today = [];
+            const yesterday = [];
+            const twoDaysAgo = [];
+
+            allLikedProfiles.forEach((profile) => {
+              if (profile.date === "today") {
+                today.push(profile);
+              } else if (profile.date === "yesterday") {
+                yesterday.push(profile);
+              } else if (profile.date === "twodaysago") {
+                twoDaysAgo.push(profile);
+              }
+              // You might want to handle profiles with no 'date' or unrecognized 'date' values
+            });
+
+            setTodayProfiles(today);
+            setYesterdayProfiles(yesterday);
+            setTwoDaysAgoProfiles(twoDaysAgo);
+          } else {
+            console.warn("The 'likes' document does not contain a 'profiles' array or it's empty.");
+            // Keep arrays empty
+          }
+        } else {
+          console.log("No such 'likes' document!");
+          // Keep arrays empty
+        }
+      } catch (err) {
+        console.error("Error fetching liked profiles: ", err);
+        setError("Failed to load liked profiles. Please try again later.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLikedProfiles();
+  }, []); // Empty dependency array means this runs once on mount
+
+  if (isLoading) {
+    return (
+      <div className="bg-[#111111] text-white h-screen flex flex-col items-center justify-center">
+        <p>Loading liked profiles...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-[#111111] text-white h-screen flex flex-col items-center justify-center">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
+
+  const hasAnyProfiles = todayProfiles.length > 0 || yesterdayProfiles.length > 0 || twoDaysAgoProfiles.length > 0;
+
   return (
     <div className="bg-[#111111] text-white h-screen flex flex-col">
       <div className="sticky top-0 bg-[#111111] z-10">
@@ -34,12 +90,18 @@ export default function LikesPage() {
       </div>
 
       <div className="overflow-y-auto pb-32 px-4">
+        {!hasAnyProfiles && (
+          <div className="text-center text-gray-400 mt-8">
+            <p>No liked profiles to display yet.</p>
+          </div>
+        )}
+
         {todayProfiles.length > 0 && (
           <div className="mb-6">
             <h2 className="text-center text-gray-500 py-2">Today</h2>
             <div className="grid grid-cols-2 gap-4">
               {todayProfiles.map((profile, index) => (
-                <div key={index} className="relative rounded-xl overflow-hidden">
+                <div key={`today-${profile.name}-${index}`} className="relative rounded-xl overflow-hidden">
                   <img
                     src={profile.image}
                     alt={profile.name}
@@ -70,7 +132,7 @@ export default function LikesPage() {
             <h2 className="text-center text-gray-500 py-2">Yesterday</h2>
             <div className="grid grid-cols-2 gap-4">
               {yesterdayProfiles.map((profile, index) => (
-                <div key={index} className="relative rounded-xl overflow-hidden">
+                <div key={`yesterday-${profile.name}-${index}`} className="relative rounded-xl overflow-hidden">
                   <img
                     src={profile.image}
                     alt={profile.name}
@@ -101,7 +163,7 @@ export default function LikesPage() {
             <h2 className="text-center text-gray-500 py-2">2 days ago</h2>
             <div className="grid grid-cols-2 gap-4">
               {twoDaysAgoProfiles.map((profile, index) => (
-                <div key={index} className="relative rounded-xl overflow-hidden">
+                <div key={`two-days-ago-${profile.name}-${index}`} className="relative rounded-xl overflow-hidden">
                   <img
                     src={profile.image}
                     alt={profile.name}

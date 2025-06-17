@@ -1,5 +1,5 @@
 {
-  "name": "frick-dating-app",
+  "name": "cms-admin",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,21 +9,16 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@babel/runtime": "^7.27.1",
-    "@react-spring/web": "^9.7.5",
-    "@use-gesture/react": "^10.3.1",
     "firebase": "^11.9.1",
-    "next": "15.3.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-slider": "^2.0.6",
-    "react-tinder-card": "^1.6.4"
+    "next": "15.3.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
-    "eslint-config-next": "15.3.1",
+    "eslint-config-next": "15.3.3",
     "tailwindcss": "^4"
   }
 }
