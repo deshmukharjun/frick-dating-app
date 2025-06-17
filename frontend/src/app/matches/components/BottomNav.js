@@ -23,7 +23,7 @@ export default function BottomNav() {
                         onClick={() => {
                             if (item.label === "Messages") {
                                 // Redirect to external URL
-                                window.location.href = "https://chatapp-frontend-xi-ecru.vercel.app/chat";
+                                window.location.href = "https://chatapp-frontend-xi-ecru.vercel.app";
                             } else {
                                 router.push(item.path);
                             }
